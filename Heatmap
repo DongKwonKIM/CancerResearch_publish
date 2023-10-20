@@ -1,0 +1,684 @@
+---
+title: "Exploring Aryl Hydrocarbon Receptor Presence and Distribution in the Tumor Microenvironment, with a Focus on Immune Cells, in Various Solid Cancer Types"
+author: Dong Kwon Kim1,2 †, Chai Young Lee2 †, Yu Jin Han2 †, So Young Park2, Heekyung Han2, Kwangmin Na2, Mi Hyun Kim2, Seung Min Yang2, Sujeong Baek2, Youngtaek Kim2, Jun Yeon Hwang1,2, Seul Lee1,2, Seong-san Kang3, Min Hee Hong4, Sun Min Lim4, Jii Bum Lee4, Jae Hwan Kim2*, Byoung Chul Cho4,6*, Kyoung-Ho Pyo2,4,5,6*
+date: '2023 10 16 '
+Abstract:
+The aryl hydrocarbon receptor (AhR) is a transcription factor that performs various functions upon avtiavtion by a ligand. A number of studies have explored the implications of AhR expression in tumor progression and immune surveillance. Nevertheless, investigations on the distribution of AhR expression specifically in cancer cells or immune cells in the tumor microenvitornment (TME) remain limited. Examining AhR expression distribution in the TME is crucial for gaining insights into the mechanism of action of AhR-targeting anticancer agents and its potential as a biomarker. In this study, we employed multi immunohistochemistry (mIHC) and image cytometry to investigate AhR expression and distribution across five solid cancer types, which included a total of 520 patient samples. Additionally, we conducted an analysis of the nuclear and cytosolic expression distribution of AhR. Our findings revealed that AhR expression was primarily localized in cancer cells, followed by T cells and macrophages in the stroma. Furthermore, we observed a positive correlation between nuclear and cytosolic expressions of AhR, indicating that AhR expression as a biomarker is independent of its location in the nucleus or cytosol. Interestingly, the expression patterns of AhR was categorized into three clusters based on cancer type, with non-small cell lung cancer (NSCLC) exhibiting a high level of AhR expression in regulatory T cells (Tregs). These research findings are anticipated to serve as pivotal evidence for the design of clinical trials and the analysis of the anticancer mechanisms of AhR-targeting therapies.
+Keywords: Aryl Hydrocarbon Receptor, Tumor Microenvironment, T-Lymphocyte, Myeloid cell
+
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Set your directory
+```{r}
+getwd()
+setwd("Your/Directory/")
+```
+
+#load raw data
+```{r}
+library(readr)
+input <- read_csv("input2_2.csv") 
+```
+#Set color map
+```{r, fig.height=10}
+library(RColorBrewer)
+display.brewer.all()
+c1 =brewer.pal(n = 8, name = "Set1")
+c2 =brewer.pal(n = 8, name = "Dark2")
+c3 =brewer.pal(n = 8, name = "Paired")
+c4 =brewer.pal(n = 8, name = "Accent")
+
+Cols = c(c1,c2, c3, c4)
+CCols = c(c1,c2, c3, c4,c1,c2, c3, c4,c1,c2, c3, c4)
+
+```
+
+#Information (meta-data) assignment
+```{r}
+colnames(input)
+input$"Specimen"=as.factor(input$"Specimen")
+input$"No"=as.factor(input$"No")
+input$"Age"=as.numeric(input$"Age")
+input$"Gender"=as.factor(input$"Gender")
+input$"Organ"=as.factor(input$"Organ")
+input$"Grade"=as.factor(input$"Grade")
+input$"Stage"=as.factor(input$"Stage")
+input$"Type"=as.factor(input$"Type")
+input$"Metastasis"=as.factor(input$"Metastasis")
+input$"TN_PanCK"=as.numeric(input$"TN_PanCK")
+input$"TN_PanCK_AhR_Cyto"=as.numeric(input$"TN_PanCK_AhR_Cyto")
+input$"TN_PanCK_AhR_Nu"=as.numeric(input$"TN_PanCK_AhR_Nu")
+input$"TN_CD3_AhR_Cyto"=as.numeric(input$"TN_CD3_AhR_Cyto")
+input$"TN_CD3_AhR_Nu"=as.numeric(input$"TN_CD3_AhR_Nu")
+input$"TN_Treg_Cyto"=as.numeric(input$"TN_Treg_Cyto")
+input$"TN_Treg_AhR_Nu"=as.numeric(input$"TN_Treg_AhR_Nu")
+input$"TN_CD68_AhR_Cyto"=as.numeric(input$"TN_CD68_AhR_Cyto")
+input$"TN_CD68_AhR_Nu"=as.numeric(input$"TN_CD68_AhR_Nu")
+input$"TN_Total_AhR_Cyto"=as.numeric(input$"TN_Total_AhR_Cyto")
+input$"TN_Total_AhR_Nu"=as.numeric(input$"TN_Total_AhR_Nu")
+input$"TN_CD3_Total"=as.numeric(input$"TN_CD3_Total")
+input$"TN_CD68_Total"=as.numeric(input$"TN_CD68_Total")
+input$"ST_CD3_AhR_Cyto"=as.numeric(input$"ST_CD3_AhR_Cyto")
+input$"ST_CD3_AhR_Nu"=as.numeric(input$"ST_CD3_AhR_Nu")
+input$"ST_Treg_AhR_Cyto"=as.numeric(input$"ST_Treg_AhR_Cyto")
+input$"ST_Treg_AhR_Nu"=as.numeric(input$"ST_Treg_AhR_Nu")
+input$"ST_CD68_AhR_Cyto"=as.numeric(input$"ST_CD68_AhR_Cyto")
+input$"ST_CD68_AhR_Nu"=as.numeric(input$"ST_CD68_AhR_Nu")
+input$"ST_Total_AhR_Cyto"=as.numeric(input$"ST_Total_AhR_Cyto")
+input$"ST_Total_AhR_Nu"=as.numeric(input$"ST_Total_AhR_Nu")
+input$"ST_CD3_Total"=as.numeric(input$"ST_CD3_Total")
+input$"ST_CD68_Total"=as.numeric(input$"ST_CD68_Total")
+saveRDS(input, file="input.RDS")
+```
+
+
+
+#Set Matrix file information
+```{r, fig.width=10, fig.height=7}
+input
+matrixform <-input[,10:32]
+matrix <-as.matrix(matrixform)
+matrix[1:5,1:5]
+rownames(matrix) <- rownames(input)
+```
+```{r, fig.width=20, fig.height=12}
+matrix <-as.matrix(input[,10:32])
+rownames(matrix) <- c(1:513)
+
+
+
+AhR <- c("TN_PanCK_AhR_Cyto"
+,"TN_PanCK_AhR_Nu"
+,"TN_CD3_AhR_Cyto"
+,"TN_CD3_AhR_Nu"
+,"TN_Treg_AhR_Nu"
+,"TN_CD68_AhR_Cyto"
+,"TN_CD68_AhR_Nu"
+,"ST_CD3_AhR_Cyto"
+,"ST_CD3_AhR_Nu"
+,"ST_Treg_AhR_Cyto"
+,"ST_Treg_AhR_Nu"
+,"ST_CD68_AhR_Cyto"
+,"ST_CD68_AhR_Nu"
+)
+
+View(Total_matrix)
+
+Total <- matrix[,AhR]
+Total_matrix <- as.matrix(Total)
+Total_matrix <- t(Total_matrix)
+Total_matrix[1:5,1:5]
+```
+
+
+
+
+#Run library
+```{r}
+library(pheatmap)
+library(ComplexHeatmap)
+library(gridExtra)
+library(Cairo)
+```
+
+#Run heatmap (total)
+```{r, fig.height=8, fig.width=10}
+
+annotation_row <- data.frame(
+  Histology <- factor(c(rep("Tumor_nest",7), rep("Stroma",6))),
+  Cell <-  factor(c("Cancer","Cancer","T cell","T cell","Treg","Macrophage","Macrophage","T cell","T cell","Treg","Treg","Macrophage","Macrophage")),  
+  AhR_expression_in <- factor(c("Cytosol","Nucleus","Cytosol","Nucleus","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus"))
+)
+
+rownames(annotation_row) <- AhR
+colnames(annotation_row) <- c("Histology","Cell","AhR_expression_in")
+#78FF16
+
+dim(Total)
+
+# 데이터 프레임 이름이 'your_data_frame'이고 열 이름이 'Metastasis'인 경우를 가정합니다.
+input$Metastasis <- factor(input$Metastasis, levels = c("Metastasis", "Non_meta", "normal"), exclude = NULL)
+
+
+
+annotation_col <- data.frame(
+  Type_of_cancer = factor(input$Specimen),
+  Grade <- factor(input$Grade),
+  Stage <- factor(input$Stage),
+    T_cell_infiltration <- input$TN_CD3_Total,
+    Macrophage_infiltration <- input$TN_CD68_Total,
+  Metastasis <- factor(input$Metastasis, levels = c("Metastasis", "Non_meta", "normal"))
+)
+
+levels(input$Specimen) <-c('BLCA',"CRC","ESO","HNSCC","NSCLC")
+str(input)
+
+input$Metastasis <- factor(input$Metastasis, levels = c("Metastasis", "Non_meta", "normal"), exclude = NULL)
+
+ann_colors = list(Type_of_cancer=c("BLCA" ="#CB6752",  "CRC" = "#3498C6",    "ESO"= "#E2A45F", "HNSCC"  = "#1B8A30",      "NSCLC" = "#5C266B"  ),
+                  Grade=c("1"="#110D44", "2"="#595E7E", "3"="#DB4295" ,"NA" = "gray" ),
+                  Stage=c("1"="#110D44", "2"="#595E7E", "3"="#898A8B"  , "4"="#FFED73","NA" = "gray" ),
+                  Metastasis=c("Metastasis" ="#CE291E", "Non_meta"="#FFCF23", "normal"="#BEBEBE"),
+                  T_cell_infiltration = c("gray","#FF4040"),
+                  Macrophage_infiltration = c("gray","#679B21"),
+                  Cell = c("Cancer"="#E81500", "T cell"="#497BD4","Treg"="#5AB758", "Macrophage"="#8E57B7"),
+                  Histology = c("Tumor_nest"="#FF84C0","Stroma"='#FFE7BF'),
+                  AhR_expression_in =c("Cytosol"="#3A968F","Nucleus"="#E9A049")
+)
+
+annotation_col$Metastasis
+#annotation = data.frame(Cell = annotation_row$Cell, Type_of_cancer = annotation_col$Type_of_cancer)
+
+colnames(annotation_col) <- c("Type_of_cancer","Grade","Stage","T_cell_infiltration","Macrophage_infiltration","Metastasis")
+
+
+Total_matrix[is.na(Total_matrix)] <- 0
+
+p1 <- ComplexHeatmap::pheatmap(Total_matrix,
+         annotation_col = annotation_col,
+         annotation_row = annotation_row, 
+         cluster_cols=F,
+         cluster_rows = T,
+    annotation_colors = ann_colors, 
+    row_split = annotation_row$Cell,
+    column_split = annotation_col$Type_of_cancer,
+    show_rownames = T,
+    show_colnames = F,
+        annotation_legend = T,
+    annotation_names_row = T,
+    annotation_names_col = T)
+
+
+p2 <- ComplexHeatmap::rowAnnotation(AhR = anno_barplot((1:nrow(Total_matrix))))
+
+p1 + p2
+
+CairoPNG("Total_heatmap.png", width = 12, height = 10, units = "in", res = 300)
+print(p1 + p2)
+dev.off()
+```
+
+#Run heatmap (BLCA)
+```{r, fig.width=10, fig.height=10}
+types=input$Specimen
+levels(types) # "BLCA"  "CRC"   "ESO"   "HNSCC" "NSCLC"
+BLCA = Total_matrix[,1:48]
+input_BLCA = subset(input, input$Specimen == "BLCA")
+
+
+
+annotation_row <- data.frame(
+  Histology <- factor(c(rep("Tumor_nest",7), rep("Stroma",6))),
+  Cell <-  factor(c("Cancer","Cancer","T cell","T cell","Treg","Macrophage","Macrophage","T cell","T cell","Treg","Treg","Macrophage","Macrophage")),  
+  AhR_expression_in <- factor(c("Cytosol","Nucleus","Cytosol","Nucleus","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus"))
+)
+
+rownames(annotation_row) <- AhR
+colnames(annotation_row) <- c("Histology","Cell","AhR_expression_in")
+
+
+annotation_col = data.frame(
+  Grade = factor(input_BLCA$Grade),
+  Stage = factor(input_BLCA$Stage),
+    T_cell_infiltration = input_BLCA$TN_CD3_Total,
+    Macrophage_infiltration = input_BLCA$TN_CD68_Total,
+  Metastasis = factor(input_BLCA$Metastasis, levels = c("Non_meta", "normal"))
+)
+
+
+ann_colors = list(Type_of_cancer=c("BLCA" ="#CB6752",  "CRC" = "#3498C6",    "ESO"= "#E2A45F", "HNSCC"  = "#1B8A30",      "NSCLC" = "#5C266B"  ),
+                  Grade=c("1"="#110D44", "2"="#595E7E", "3"="#DB4295" ,"NA" = "gray" ),
+                  Stage=c("1"="#110D44", "2"="#595E7E", "3"="#898A8B"  , "4"="#FFED73","NA" = "gray" ),
+                  Metastasis=c("Metastasis" ="#CE291E", "Non_meta"="#FFCF23", "normal"="#BEBEBE"),
+                  T_cell_infiltration = c("gray","#FF4040"),
+                  Macrophage_infiltration = c("gray","#679B21"),
+                  Cell = c("Cancer"="#E81500", "T cell"="#497BD4","Treg"="#5AB758", "Macrophage"="#8E57B7"),
+                  Histology = c("Tumor_nest"="#FF84C0","Stroma"='#FFE7BF'),
+                  AhR_expression_in =c("Cytosol"="#3A968F","Nucleus"="#E9A049")
+)
+
+
+  
+BLCA[is.na(BLCA)] <- 0
+
+p1 <- ComplexHeatmap::pheatmap(BLCA,
+         annotation_col = annotation_col,
+         annotation_row = annotation_row, 
+         cluster_cols= T,
+         cluster_rows = T,
+    annotation_colors = ann_colors, 
+    row_split = annotation_row$Cell,
+    #column_split = annotation_col$Type_of_cancer,
+    show_rownames = F,
+    show_colnames = F,
+        annotation_legend = T,
+    annotation_names_row = T,
+    annotation_names_col = T)
+
+
+p2 <- ComplexHeatmap::rowAnnotation(AhR = anno_barplot((1:nrow(BLCA))))
+
+p1 + p2
+
+CairoPNG("BLCA1-1.png", width = 11, height = 10, units = "in", res = 300)
+print(p1 + p2)
+dev.off()
+
+```
+
+
+#Run heatmap (HNSCC)
+```{r, fig.width=10, fig.height=10}
+types=input$Specimen
+levels(types) # "BLCA"  "CRC"   "ESO"   "HNSCC" "NSCLC"
+HNSCC = Total_matrix[,49:128]
+input_HNSCC = subset(input, input$Specimen == "HNSCC")
+
+annotation_row <- data.frame(
+  Histology <- factor(c(rep("Tumor_nest",7), rep("Stroma",6))),
+  Cell <-  factor(c("Cancer","Cancer","T cell","T cell","Treg","Macrophage","Macrophage","T cell","T cell","Treg","Treg","Macrophage","Macrophage")),  
+  AhR_expression_in <- factor(c("Cytosol","Nucleus","Cytosol","Nucleus","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus"))
+)
+
+rownames(annotation_row) <- AhR
+colnames(annotation_row) <- c("Histology","Cell","AhR_expression_in")
+
+annotation_col = data.frame(
+  Grade = factor(input_HNSCC$Grade),
+  Stage = factor(input_HNSCC$Stage),
+    T_cell_infiltration = input_HNSCC$TN_CD3_Total,
+    Macrophage_infiltration = input_HNSCC$TN_CD68_Total,
+ Metastasis = factor(input_HNSCC$Metastasis, levels = c("Metastasis","Non_meta", "normal"))
+)
+
+
+ann_colors = list(Type_of_cancer=c("BLCA" ="#CB6752",  "CRC" = "#3498C6",    "ESO"= "#E2A45F", "HNSCC"  = "#1B8A30",      "NSCLC" = "#5C266B"  ),
+                  Grade=c("1"="#110D44", "2"="#595E7E", "3"="#DB4295" ,"NA" = "gray" ),
+                  Stage=c("1"="#110D44", "2"="#595E7E", "3"="#898A8B"  , "4"="#FFED73","NA" = "gray" ),
+                  Metastasis=c("Metastasis" ="#CE291E", "Non_meta"="#FFCF23", "normal"="#BEBEBE"),
+                  T_cell_infiltration = c("gray","#FF4040"),
+                  Macrophage_infiltration = c("gray","#679B21"),
+                  Cell = c("Cancer"="#E81500", "T cell"="#497BD4","Treg"="#5AB758", "Macrophage"="#8E57B7"),
+                  Histology = c("Tumor_nest"="#FF84C0","Stroma"='#FFE7BF'),
+                  AhR_expression_in =c("Cytosol"="#3A968F","Nucleus"="#E9A049")
+)
+
+
+
+  
+HNSCC[is.na(HNSCC)] <- 0
+
+p1 <- ComplexHeatmap::pheatmap(HNSCC,
+         annotation_col = annotation_col,
+         annotation_row = annotation_row, 
+         cluster_cols= T,
+         cluster_rows = T,
+    annotation_colors = ann_colors, 
+    row_split = annotation_row$Cell,
+    #column_split = annotation_col$Type_of_cancer,
+    show_rownames = F,
+    show_colnames = F,
+        annotation_legend = T,
+    annotation_names_row = T,
+    annotation_names_col = T)
+
+
+p2 <- ComplexHeatmap::rowAnnotation(AhR = anno_barplot((1:nrow(HNSCC))))
+
+p1 + p2
+
+CairoPNG("HNSCC1-1.png", width = 11, height = 10, units = "in", res = 300)
+print(p1 + p2)
+dev.off()
+
+```
+#Run heatmap (CRC)
+```{r, fig.width=10, fig.height=10}
+types=input$Specimen
+levels(types) # "BLCA"  "CRC"   "ESO"   "HNSCC" "NSCLC"
+CRC = Total_matrix[,129:225]
+rownames(CRC)
+#CRC <- CRC[-5,]
+CRC[is.na(CRC)] <- 0
+
+input_CRC = subset(input, input$Specimen == "CRC")
+
+annotation_row <- data.frame(
+  Histology <- factor(c(rep("Tumor_nest",7), rep("Stroma",6))),
+  Cell <-  factor(c("Cancer","Cancer","T cell","T cell","Treg","Macrophage","Macrophage","T cell","T cell","Treg","Treg","Macrophage","Macrophage")),  
+  AhR_expression_in <- factor(c("Cytosol","Nucleus","Cytosol","Nucleus","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus"))
+)
+
+rownames(annotation_row) <- AhR
+colnames(annotation_row) <- c("Histology","Cell","AhR_expression_in")
+
+annotation_col = data.frame(
+  Grade = factor(input_CRC$Grade),
+  Stage = factor(input_CRC$Stage),
+    T_cell_infiltration = input_CRC$TN_CD3_Total,
+    Macrophage_infiltration = input_CRC$TN_CD68_Total,
+ Metastasis = factor(input_CRC$Metastasis, levels = c("Metastasis","Non_meta", "normal"))
+)
+
+
+ann_colors = list(Type_of_cancer=c("BLCA" ="#CB6752",  "CRC" = "#3498C6",    "ESO"= "#E2A45F", "HNSCC"  = "#1B8A30",      "NSCLC" = "#5C266B"  ),
+                  Grade=c("1"="#110D44", "2"="#595E7E", "3"="#DB4295" ,"NA" = "gray" ),
+                  Stage=c("1"="#110D44", "2"="#595E7E", "3"="#898A8B"  , "4"="#FFED73","NA" = "gray" ),
+                  Metastasis=c("Metastasis" ="#CE291E", "Non_meta"="#FFCF23", "normal"="#BEBEBE"),
+                  T_cell_infiltration = c("gray","#FF4040"),
+                  Macrophage_infiltration = c("gray","#679B21"),
+                  Cell = c("Cancer"="#E81500", "T cell"="#497BD4","Treg"="#5AB758", "Macrophage"="#8E57B7"),
+                  Histology = c("Tumor_nest"="#FF84C0","Stroma"='#FFE7BF'),
+                  AhR_expression_in =c("Cytosol"="#3A968F","Nucleus"="#E9A049")
+)
+
+
+
+  
+CRC[is.na(CRC)] <- 0
+
+p1 <- ComplexHeatmap::pheatmap(CRC,
+         annotation_col = annotation_col,
+         annotation_row = annotation_row, 
+         cluster_cols= T,
+         cluster_rows = T,
+    annotation_colors = ann_colors, 
+    row_split = annotation_row$Cell,
+    #column_split = annotation_col$Type_of_cancer,
+    show_rownames = F,
+    show_colnames = F,
+        annotation_legend = T,
+    annotation_names_row = T,
+    annotation_names_col = T)
+
+
+p2 <- ComplexHeatmap::rowAnnotation(AhR = anno_barplot((1:nrow(CRC))))
+
+p1 + p2
+
+CairoPNG("CRC-1.png", width = 11, height = 10, units = "in", res = 300)
+print(p1 + p2)
+dev.off()
+```
+#Run heatmap (NSCLC)
+```{r, fig.width=10, fig.height=10}
+types=input$Specimen
+levels(types) # "BLCA"  "CRC"   "ESO"   "HNSCC" "NSCLC"
+NSCLC = Total_matrix[,226:323]
+rownames(NSCLC)
+#CRC <- CRC[-5,]
+NSCLC[is.na(NSCLC)] <- 0
+
+input_NSCLC = subset(input, input$Specimen == "NSCLC")
+
+annotation_row <- data.frame(
+  Histology <- factor(c(rep("Tumor_nest",7), rep("Stroma",6))),
+  Cell <-  factor(c("Cancer","Cancer","T cell","T cell","Treg","Macrophage","Macrophage","T cell","T cell","Treg","Treg","Macrophage","Macrophage")),  
+  AhR_expression_in <- factor(c("Cytosol","Nucleus","Cytosol","Nucleus","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus"))
+)
+
+rownames(annotation_row) <- AhR
+colnames(annotation_row) <- c("Histology","Cell","AhR_expression_in")
+
+annotation_col = data.frame(
+  Grade = factor(input_NSCLC$Grade),
+  Stage = factor(input_NSCLC$Stage),
+    T_cell_infiltration = input_NSCLC$TN_CD3_Total,
+    Macrophage_infiltration = input_NSCLC$TN_CD68_Total,
+   Metastasis = factor(input_NSCLC$Metastasis, levels = c("Metastasis","Non_meta", "normal"))
+)
+
+
+ann_colors = list(Type_of_cancer=c("BLCA" ="#CB6752",  "CRC" = "#3498C6",    "ESO"= "#E2A45F", "HNSCC"  = "#1B8A30",      "NSCLC" = "#5C266B"  ),
+                  Grade=c("1"="#110D44", "2"="#595E7E", "3"="#DB4295" ,"NA" = "gray" ),
+                  Stage=c("1"="#110D44", "2"="#595E7E", "3"="#898A8B"  , "4"="#FFED73","NA" = "gray" ),
+                  Metastasis=c("Metastasis" ="#CE291E", "Non_meta"="#FFCF23", "normal"="#BEBEBE"),
+                  T_cell_infiltration = c("gray","#FF4040"),
+                  Macrophage_infiltration = c("gray","#679B21"),
+                  Cell = c("Cancer"="#E81500", "T cell"="#497BD4","Treg"="#5AB758", "Macrophage"="#8E57B7"),
+                  Histology = c("Tumor_nest"="#FF84C0","Stroma"='#FFE7BF'),
+                  AhR_expression_in =c("Cytosol"="#3A968F","Nucleus"="#E9A049")
+)
+
+
+
+  
+#NSCLC[is.na(NSCLC)] <- 0
+
+p1 <- ComplexHeatmap::pheatmap(NSCLC,
+         annotation_col = annotation_col,
+         annotation_row = annotation_row, 
+         cluster_cols= T,
+         cluster_rows = T,
+    annotation_colors = ann_colors, 
+    row_split = annotation_row$Cell,
+    #column_split = annotation_col$Type_of_cancer,
+    show_rownames = F,
+    show_colnames = F,
+        annotation_legend = T,
+    annotation_names_row = T,
+    annotation_names_col = T)
+
+
+p2 <- ComplexHeatmap::rowAnnotation(AhR = anno_barplot((1:nrow(NSCLC))))
+
+p1 + p2
+
+CairoPNG("NSCLC1-1.png", width = 10, height = 10, units = "in", res = 300)
+print(p1 + p2)
+dev.off()
+```
+#Run heatmap (Esophagus)
+```{r, fig.width=10, fig.height=10}
+types=input$Specimen
+levels(types) # "BLCA"  "CRC"   "ESO"   "HNSCC" "NSCLC"
+ESO = Total_matrix[,324:513]
+rownames(ESO)
+#CRC <- CRC[-5,]
+ESO[is.na(ESO)] <- 0
+
+input_ESO = subset(input, input$Specimen == "ESO")
+
+annotation_row <- data.frame(
+  Histology <- factor(c(rep("Tumor_nest",7), rep("Stroma",6))),
+  Cell <-  factor(c("Cancer","Cancer","T cell","T cell","Treg","Macrophage","Macrophage","T cell","T cell","Treg","Treg","Macrophage","Macrophage")),  
+  AhR_expression_in <- factor(c("Cytosol","Nucleus","Cytosol","Nucleus","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus","Cytosol","Nucleus"))
+)
+
+rownames(annotation_row) <- AhR
+colnames(annotation_row) <- c("Histology","Cell","AhR_expression_in")
+
+annotation_col = data.frame(
+  Grade = factor(input_ESO$Grade),
+  Stage = factor(input_ESO$Stage),
+    T_cell_infiltration = input_ESO$TN_CD3_Total,
+    Macrophage_infiltration = input_ESO$TN_CD68_Total,
+  Metastasis = factor(input_ESO$Metastasis, levels = c("Metastasis","Non_meta", "normal"))
+)
+
+
+ann_colors = list(Type_of_cancer=c("BLCA" ="#CB6752",  "CRC" = "#3498C6",    "ESO"= "#E2A45F", "HNSCC"  = "#1B8A30",      "NSCLC" = "#5C266B"  ),
+                  Grade=c("1"="#110D44", "2"="#595E7E", "3"="#DB4295" ,"NA" = "gray" ),
+                  Stage=c("1"="#110D44", "2"="#595E7E", "3"="#898A8B"  , "4"="#FFED73","NA" = "gray" ),
+                  Metastasis=c("Metastasis" ="#CE291E", "Non_meta"="#FFCF23", "normal"="#BEBEBE"),
+                  T_cell_infiltration = c("gray","#FF4040"),
+                  Macrophage_infiltration = c("gray","#679B21"),
+                  Cell = c("Cancer"="#E81500", "T cell"="#497BD4","Treg"="#5AB758", "Macrophage"="#8E57B7"),
+                  Histology = c("Tumor_nest"="#FF84C0","Stroma"='#FFE7BF'),
+                  AhR_expression_in =c("Cytosol"="#3A968F","Nucleus"="#E9A049")
+)
+
+
+
+  
+#NSCLC[is.na(NSCLC)] <- 0
+
+p1 <- ComplexHeatmap::pheatmap(ESO,
+         annotation_col = annotation_col,
+         annotation_row = annotation_row, 
+         cluster_cols= T,
+         cluster_rows = T,
+    annotation_colors = ann_colors, 
+    row_split = annotation_row$Cell,
+    #column_split = annotation_col$Type_of_cancer,
+    show_rownames = F,
+    show_colnames = F,
+        annotation_legend = T,
+    annotation_names_row = T,
+    annotation_names_col = T)
+
+
+p2 <- ComplexHeatmap::rowAnnotation(AhR = anno_barplot((1:nrow(ESO))))
+
+p1 + p2
+
+CairoPNG("ESO1-1.png", width = 10, height = 10, units = "in", res = 300)
+print(p1 + p2)
+dev.off()
+```
+#Run color table for K-mean clustering
+```{r color, fig.height=10}
+library(RColorBrewer)
+
+display.brewer.all()
+c1 =brewer.pal(n = 4, name = "RdGy")
+c2 =brewer.pal(n = 5, name = "Set1")
+c3 =brewer.pal(n = 4, name = "PiYG")
+c4 =brewer.pal(n = 2, name = "Accent")
+Cols = c(c1,c2, c3, c4)
+CCols = c(c1,c2, c3, c4,c1,c2, c3, c4,c1,c2, c3, c4)
+```
+
+#Run library for K-mean clustering
+```{r}
+library(cluster)  
+library(ggplot2)
+library(factoextra)
+library(ggpubr)
+library(corrplot)
+library(tibble)
+```
+
+#set matrix for k-mean clustering
+```{r}
+matrix3 <-as.matrix(input[,10:32])
+rownames(matrix3) <- c(1:513)
+
+AhR <- c("TN_PanCK_AhR_Cyto"
+,"TN_PanCK_AhR_Nu"
+,"TN_CD3_AhR_Cyto"
+,"TN_CD3_AhR_Nu"
+,"TN_CD68_AhR_Cyto"
+,"TN_CD68_AhR_Nu"
+,"ST_CD3_AhR_Cyto"
+,"ST_CD3_AhR_Nu"
+,"ST_Treg_AhR_Cyto"
+,"ST_Treg_AhR_Nu"
+,"ST_CD68_AhR_Cyto"
+,"ST_CD68_AhR_Nu"
+)
+
+
+Total3 <- matrix3[,AhR]
+Total_matrix3 <- as.matrix(Total3)
+Total_matrix3 <- t(Total_matrix3)
+```
+
+#Run K-mean clustering
+```{r}
+k <- 3
+matrixx <- na.omit(t(Total_matrix3))
+kmeans_result <- kmeans(matrixx, centers = k, nstart = 20)  # nstart는 초기 중심값 설정 횟수
+cluster_labels <- kmeans_result$cluster
+silhouette_result <- silhouette(cluster_labels, dist(matrixx))
+fviz_silhouette(silhouette_result, geom = "bar", ggtheme = theme_minimal() +
+                 theme(panel.grid.major = element_blank(), 
+                       panel.grid.minor = element_blank(),
+                       panel.background = element_blank(),
+                       panel.border = element_blank(),
+                       axis.line = element_line(color = "black"),
+                       axis.text = element_text(size = 12),
+                       axis.title = element_text(size = 14, face = "bold"),
+                       legend.title = element_text(size = 14),
+                       legend.text = element_text(size = 12),
+                       legend.position = "right"),
+                palette = c("red", "orange", "blue"))
+pca_result <- prcomp(matrixx)
+pca_data <- as.data.frame(pca_result$x[, 1:2])
+cluster_colors <- c("red", "orange", "blue")
+plot(pca_data[, 1], pca_data[, 2], col = cluster_colors[cluster_labels], pch = 20, main = "K-Means Clustering with PCA", xlab = "PC1", ylab = "PC2")
+legend("topright", legend = unique(cluster_labels), col = cluster_colors, pch = 20, title = "Clusters")
+```
+#Run K-mean clustering
+```{r}
+#Specimen assign
+cancer_colors <- c("BLCA"="#CB6752",  "CRC"="#3498C6", "ESO"="#E2A45F", "HNSCC"="#1B8A30", "NSCLC"="#5C266B") 
+ 
+#Specimen symbol assign
+shapes <- c("BLCA" = 6, "CRC" = 13, "ESO" = 1, "HNSCC" = 17, "NSCLC" = 22) 
+ 
+#Run plot
+plot(pca_data[, 1], pca_data[, 2], col = cancer_colors[input$Specimen], pch = shapes[input$Specimen], main = "K-Means Clustering with PCA", xlab = "PC1", ylab = "PC2")
+legend("topright", legend = unique(input$Specimen), col = cancer_colors[unique(input$Specimen)], pch = shapes[unique(input$Specimen)], title = "Cancer")
+```
+
+#Generation of PCA raw data
+```{r}
+pca_result
+```
+
+#Export each cluster marix data
+```{r}
+cluster_0_data = matrixx[cluster_labels == 1, ]
+cluster_1_data = matrixx[cluster_labels == 2, ]
+cluster_2_data = matrixx[cluster_labels == 3, ]
+
+cluster_0_data1 <- as.data.frame(cluster_0_data)
+cluster_1_data1 <- as.data.frame(cluster_1_data)
+cluster_2_data1 <- as.data.frame(cluster_2_data)
+
+cluster_0_data1 <- rownames_to_column(cluster_0_data1, var = "No")
+cluster_1_data1 <- rownames_to_column(cluster_1_data1, var = "No")
+cluster_2_data1 <- rownames_to_column(cluster_2_data1, var = "No")
+
+head(input)
+str(input)
+```
+
+
+
+```{r}
+write.csv(cluster_0_data1, file = "clustered_data1.csv", row.names = FALSE)
+write.csv(cluster_1_data1, file = "clustered_data2.csv", row.names = FALSE)
+write.csv(cluster_2_data1, file = "clustered_data3.csv", row.names = FALSE)
+```
+
+```{r}
+dim(input)
+input[1:5,1:5]
+input2 <- cbind(c(1:513),input)
+colnames(input2)[1] <- c("Number")
+```
+
+```{r}
+total_matrix4 <-t(Total_matrix3)
+removed_rows <- setdiff(1:nrow(total_matrix4), 1:nrow(total_matrix4))
+select <- c(1:513)
+select <- setdiff(select, removed_rows)
+
+input3 <- subset(input2, input2$Number == select)
+dim(input3)
+input3
+```
+```{r}
+write.csv(input3, file = "input3.csv", row.names = FALSE)
+```
+
+
+```{r}
+save.image("Final.rdata")
+```
